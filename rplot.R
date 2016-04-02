@@ -19,8 +19,11 @@ for(i in 1:length(pars)){
   p = pars[[i]]
   if(p[1] %in% args){
     n = match(p[1], args) + 1
+    if(p[1] == '-s'){
+      if(is.na(args[n])) args[n] = ""       # whitespace seperator
+      if(args[n] == "\\t") args[n] = "\t"   # string to tab char
+    }
     pars[[i]][2] = args[n]
-    if(p[1]=='-s' & args[n]=="\\t") pars[[i]][2]="\t" # string to tab char
     args = args[-n]
   }
 }
@@ -28,13 +31,15 @@ for(i in 1:length(pars)){
 plot_args = args[substr(args, 1, 1) == '-']
 field_args = args[!substr(args, 1, 1) == '-']
 
-if(any(c('-h','--help') %in% args_in)){
-  cat('\n####### RPLOT #######\n')
-  cat('This script plots a scatter or hashbar plot of a csv file or string in your console.\n')
-  cat('If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
-  cat('Required arguments: csv file/string, then column names/indices (values-column last for hashbars)\n')
-  cat("NB read.table check.names=T so e.g. numeric colnames prepent 'X' and those with spaces\n")
-  cat("have spaces replaced by '.'. Use '-p' to see the colnames that are read in..\n\n")
+if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
+  cat('\n**********************\n')
+  cat('******* R-PLOT *******\n')
+  cat('**********************\n\n')
+  cat('This library plots a scatterplot or hashbar plot (bars made of hashes!) of a csv or a similarly formatted\n')
+  cat('file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
+  cat('Required arguments: csv file/string, then column names/indices (values-column last for hashbars)\n\n')
+  cat("NB read.table check.names=T so e.g. numeric colnames prepent 'X' and those with spaces have spaces replaced by '.'.\n")
+  cat("Use '-Pz | head' to suppress the plot and see the colnames that are read in..\n\n")
   cat('USAGE\n')
   cat('Example csv call - scatterplot (by column name):\n')
   cat('    "Rscript rplot.R file.csv num_field1 num_field2"\n')
@@ -49,19 +54,25 @@ if(any(c('-h','--help') %in% args_in)){
   cat('and call with:\n')
   cat('    "rplot file.csv field1 field2 etc.."\n\n')
   cat('OPTIONS:\n')
-  cat('-o   Reorder hashbar chart by value\n')
-  cat('-H   Override a default scatter plot with hashbar plot\n')
-  cat('-S   Override a default hashbar plot with scatter plot (NA values are removed)\n')
-  cat('-x   Suppress summary in case of scatter plot\n')
-  cat('-r   Scatterplot rows/height (default 20). Requires following value.\n')
-  cat('-c   Scatterplot cols/width (default 50). Requires following value.\n')
-  cat('-a   Aggregate (default `sum`) hashbar plot data by its categorical variables\n')
-  cat('-m   Aggregate by `mean` if -a selected\n')
-  cat('-l   Aggregate by `length` (count instances) if -a selected\n')
-  cat('-s   sep character (default `,`). requires value e.g. -S ";" / "\t" (inc. quotes)\n')
-  cat('-p   pch char/str (default `*`). requires value e.g. -p "." (inc. quotes)\n')
-  cat('-P   Output raw data.frame to console (for debugging)\n')
-  cat('-Q   Output processed data.frame to console (for debugging)\n\n')
+  cat('  Data handling:\n')
+  cat('    -n   Specify no header row for input data. Use col indices instead\n')
+  cat('    -s   sep character for input data (default `,`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
+  cat('    -a   Aggregate (default `sum`) hashbar plot data by its categorical variables\n')
+  cat('    -m   Aggregate by `mean` if -a selected\n')
+  cat('    -l   Aggregate by `length` (count instances) if -a selected\n')
+  cat('  Plotting:\n')
+  cat('    -o   Reorder hashbar chart by value (also reorders data.frames)\n')
+  cat('    -H   Override a default scatter plot with hashbar plot\n')
+  cat('    -S   Override a default hashbar plot with scatter plot (NA values are removed)\n')
+  cat('    -r   Scatterplot rows/height (default 20). Requires following value.\n')
+  cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
+  cat('    -p   pch char/str (default `*`). requires value e.g. -p "." (inc. quotes)\n')
+  cat('    -x   Suppress summary in case of scatter plot\n')
+  cat('    -z   Suppress plot (eg. use with -P or -Q)\n')
+  cat('  Other:\n')
+  cat('    -h   Call this help (also --help)\n')
+  cat('    -P   Output raw data.frame to console (truncated 1000 rows)\n')
+  cat('    -Q   Output processed data.frame to console (truncated)\n\n')
   quit()
 }
 
@@ -69,7 +80,8 @@ if(any(c('-h','--help') %in% args_in)){
 scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   dat = data.frame(x, y); names(dat) = c(xlab, ylab)
   # output processed data.frame to console
-  if('-Q' %in% plot_args) print(dat)
+  if('-Q' %in% plot_args) print(head(dat,1000))
+  if('-z' %in% plot_args) quit()
   #make an ASCII scatterplot on a rows X cols grid
   #pch is the ASCII character plotted
   #check arguments
@@ -142,12 +154,13 @@ txt = field_args[1]
 rows = length(strsplit(txt, split='\n')[[1]])
 
 # data from text blob argument or csv file
-if(rows == 1) d = read.table(txt, sep=pars$sep[2], stringsAsFactors=F, header=T, row.names=NULL)
-if(rows > 1) d = read.table(text=txt, header=T, sep=pars$sep[2], stringsAsFactors=F)
+if('-n' %in% plot_args) header = F else header = T
+if(rows == 1) d = read.table(txt, sep=pars$sep[2], stringsAsFactors=F, header=header, row.names=NULL)
+if(rows > 1) d = read.table(text=txt, header=header, sep=pars$sep[2], stringsAsFactors=F)
 d_orig = d
 
 # output data.frame to console
-if('-P' %in% plot_args) print(d)
+if('-P' %in% plot_args) print(head(d, 1000))
 
 field_names = field_args[2:(length(field_args))]
 
@@ -208,11 +221,11 @@ if('-a' %in% plot_args){
   names(d) = c(id_fields, values_field)
 }
 
-# output processed data.frame to console
-if('-Q' %in% plot_args) print(d)
-
 # reorder data hashbars
 if('-o' %in% plot_args) d = d[order(d[[values_field]], decreasing=T),]
+
+# output processed data.frame to console
+if('-Q' %in% plot_args) print(head(d,1000))
 
 # calculate column widths
 field_data = list()
@@ -275,6 +288,7 @@ hashes = fact * abs(values)
 
 # print hashbar plot
 cat(nrows, 'data rows plotted')
+if('-z' %in% plot_args) quit()
 if(nrow(d_orig) > nrows) cat('.', nrow(d_orig) - nrows, 'rows with NA values omitted')
 cat('\n'); for(f in field_data) cat(f$name, '  '); cat('\n')
 
