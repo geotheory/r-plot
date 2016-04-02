@@ -28,7 +28,7 @@ for(i in 1:length(pars)){
 plot_args = args[substr(args, 1, 1) == '-']
 field_args = args[!substr(args, 1, 1) == '-']
 
-if(any(c('-h','--help') %in% plot_args)){
+if(any(c('-h','--help') %in% args_in)){
   cat('\n####### RPLOT #######\n')
   cat('This script plots a scatter or hashbar plot of a csv file or string in your console.\n')
   cat('If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')

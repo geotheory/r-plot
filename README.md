@@ -25,8 +25,6 @@
 
 	rplot cars.csv cyl mpg -Ham
 
-	rplot cars.csv gear mpg -Hamo
-
 ### Output of above
 
 	$ curl https://raw.githubusercontent.com/geotheory/r-plot/master/rplot.R > rplot.R
@@ -41,7 +39,7 @@
 	If 2 numeric id_fields are provided a scatterplot will default, else hashbars.
 	Required arguments: csv file/string, then column names/indices (values-column last for hashbars)
 	NB read.table check.names=T so e.g. numeric colnames prepent 'X' and those with spaces
-	have spaces replaced by '.'. Use '-p' to see the colnames that are read in..
+	have spaces replaced by '.'. Use '-P' to see the colnames that are read in..
 
 	USAGE
 	Example csv call - scatterplot (by column name):
@@ -310,10 +308,3 @@
 	6     19.74              ######################################################
 	8     15.1               #########################################
 	$
-	$ rplot cars.csv gear mpg -Hamo
-	Aggregate function is mean
-	32 data rows plotted
-	gear   mpg
-	4      24.53              ########################################################################
-	5      21.38              ##############################################################
-	3      16.11              ###############################################
