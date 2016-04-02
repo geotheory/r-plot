@@ -37,7 +37,8 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
   cat('**********************\n\n')
   cat('This library plots a scatterplot or hashbar plot (bars made of hashes!) of a csv or a similarly formatted\n')
   cat('file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
-  cat('Required arguments: csv file/string, then column names/indices (values-column last for hashbars)\n\n')
+  cat('file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
+  cat('Required arguments: csv file/string, then column name(s)/index(ices) (values-column last for hashbars)\n\n')
   cat("NB read.table check.names=T so e.g. numeric colnames prepent 'X' and those with spaces have spaces replaced by '.'.\n")
   cat("Use '-Pz | head' to suppress the plot and see the colnames that are read in..\n\n")
   cat('USAGE\n')
@@ -78,13 +79,11 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
 
 # adapted from http://biostatmatt.com/R/scat.R
 scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
-  dat = data.frame(x, y); names(dat) = c(xlab, ylab)
-  # output processed data.frame to console
-  if('-Q' %in% plot_args) print(head(dat,1000))
-  if('-z' %in% plot_args) quit()
   #make an ASCII scatterplot on a rows X cols grid
   #pch is the ASCII character plotted
   #check arguments
+  if('-o' %in% plot_args) y = sort(y)
+  if(xlab == ylab) xlab = "Index"
   y <- as.numeric(y)
   if(missing(x)) x <- 1:length(y)
   else x <- as.numeric(x)
@@ -97,6 +96,11 @@ scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   if(nchar(pch)!=1)
     stop("pch must be exactly one character")
 
+  dat = data.frame(x, y, stringsAsFactors=F); names(dat) = c(xlab, ylab)
+  # output processed data.frame to console
+  if('-Q' %in% plot_args) print(head(dat,1000))
+  if('-z' %in% plot_args) quit()
+  
   #map the y and x values to rows and cols
   #FIXME values in y or x could be NA or NaN
   #FIXME division by zero when max(y)-min(y) == 0
@@ -167,7 +171,7 @@ field_names = field_args[2:(length(field_args))]
 # test coercible to numeric
 num = function(n) !is.na(suppressWarnings(as.numeric(n)))
 
-# update field names if actually column index numbers
+# interpret field names - check if valid as name or column index
 for(i in length(field_names):1){
   f = field_names[i]
   badfield = F
@@ -184,12 +188,12 @@ for(i in length(field_names):1){
   }
 }
 
-# omit rows with NA in plotting columns
-d = na.omit(d[,field_names])
-nrows = nrow(d) # to calc NA removals
-
 id_fields = field_names[1:(length(field_names)-1)]
 values_field = field_names[length(field_names)]
+
+# omit rows with NA in plotting columns
+d = na.omit(d[,c(id_fields, values_field), drop=F])
+nrows = nrow(d) # to calc NA removals
 
 # scatter plot if 2 fully numeric/NA variables or manually specified
 if(length(id_fields) == 1){
@@ -200,7 +204,9 @@ if(length(id_fields) == 1){
   if(all_numeric & !'-H' %in% plot_args) plot_scatter = T
   if(!all_numeric & '-S' %in% plot_args) plot_scatter = T
   if(plot_scatter){
-    dat = na.omit(data.frame(x = suppressWarnings(as.numeric(v)), y = d[[values_field]]))
+    if(values_field == id_fields){    # ie. only a single field supplied
+      dat = na.omit(data.frame(x = 1:length(v), y = d[[values_field]], stringsAsFactors=F))
+    } else dat = na.omit(data.frame(x = suppressWarnings(as.numeric(v)), y = d[[values_field]], stringsAsFactors=F))
     scat(dat$x, dat$y, cols=pars$x[2], rows=pars$y[2], pch=pars$pch[2], xlab=id_fields, ylab=values_field)
     quit()
   }
@@ -214,12 +220,15 @@ if('-a' %in% plot_args){
   cat('Aggregate function is', fun, '\n')
   if(length(id_fields) > 1) agg_list = as.list(d[,id_fields]) else agg_list = list(d[,id_fields])
   if(fun == 'length'){
-    d = aggregate(rep(1,nrow(d)), by=agg_list, FUN=sum, na.rm=T)
-  } else{
-    d = aggregate(d[[values_field]], by=agg_list, FUN=fun, na.rm=T)
-  }
-  names(d) = c(id_fields, values_field)
+    d = aggregate(rep(1,nrow(d)), by=agg_list, FUN=sum, na.rm=T, simplify=T)
+  } else d = aggregate(d[[values_field]], by=agg_list, FUN=fun, na.rm=T, simplify=T)
+  if(id_fields == values_field) values_field = fun # ie. 'length'
+} else{
+  if(length(id_fields) == 1) if(id_fields == values_field) d[[id_fields]] = 1:nrow(d); id_fields = 'Index'
 }
+
+# rename fields if they've changed
+names(d) = c(id_fields, values_field)
 
 # reorder data hashbars
 if('-o' %in% plot_args) d = d[order(d[[values_field]], decreasing=T),]
