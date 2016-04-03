@@ -38,7 +38,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
   cat('This library plots a scatterplot or hashbar plot (bars made of hashes!) of a csv or a similarly formatted\n')
   cat('file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
   cat('Required arguments: csv file/string, then column name(s)/index(ices) (values-column last for hashbars)\n\n')
-  cat("NB read.table check.names=T so e.g. numeric colnames prepent 'X' and those with spaces have spaces replaced by '.'.\n")
+  cat("NB read.table check.names=T so e.g. numeric colnames prepend 'X' and those with spaces have spaces replaced by '.'.\n")
   cat("Use '-Pz | head' to suppress the plot and see the colnames that are read in..\n\n")
   cat('USAGE\n')
   cat('Example csv call - scatterplot (by column name):\n')
@@ -297,6 +297,7 @@ hashes = fact * abs(values)
 # print hashbar plot
 cat(nrows, 'data rows plotted')
 if('-z' %in% plot_args) quit()
+if('-p' %in% plot_args) pch = pars$pch[2] else pch = '#'
 if(nrow(d_orig) > nrows) cat('.', nrow(d_orig) - nrows, 'rows with NA values omitted')
 cat('\n'); for(f in field_data) cat(f$name, '  '); cat('\n')
 
@@ -305,5 +306,5 @@ for(i in 1:length(values)){
   for(f in field_data) cat(f$values[i], '  ')
   # hashes
   cat(rep(' ', spaces[i]), sep='')
-  cat(rep('#', hashes[i]), '\n', sep='')
+  cat(rep(pch, hashes[i]), '\n', sep='')
 }

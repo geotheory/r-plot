@@ -1,68 +1,54 @@
 ### Example usage
 
 	# Get the script
-
 	curl https://raw.githubusercontent.com/geotheory/r-plot/master/rplot.R > rplot.R
 
 	# Help
-
-	Rscript rplot.R -h
+	Rscript rplot.R -h | more
 
 	# Get some data
-
 	Rscript -e "write.csv(mtcars, 'mtcars.csv')"; head -6 mtcars.csv
 
 	# Scatterplot - car weight vs fuel efficiency
-
 	Rscript rplot.R mtcars.csv wt mpg
 
 	# Hashplot - car fuel efficiencies
-
 	Rscript rplot.R mtcars.csv 1 mpg
 
 	# Ordering plot data
-
 	Rscript rplot.R mtcars.csv 1 mpg -o
 
 	# bash function (e.g. for .bash_profile)
-
 	rplot() { Rscript rplot.R "$1" ${*:2}; }
 
 	# Iris dataset
-
 	Rscript -e "write.csv(iris, 'iris.csv')"; head -6 iris.csv
 
 	# Aggregating data for categorical averages
-
 	rplot iris.csv Species Sepal.Length -am
 
 	# Plotting a single numeric variable
-
 	rplot iris.csv Sepal.Width
 
 	# Reordered and without summary
-
 	rplot iris.csv Sepal.Width -ox
 
 	# Change scatterplot size
-
 	rplot iris.csv Sepal.Width -ox -r 40 -c 80
 
 	# Single categorical variable frequency (ie. aggregate by length)
-
 	rplot iris.csv Species -al
 
 	# Other data formats (eg. semicolon-seperated)
-
 	Rscript -e "print(names(airquality)); write.table(airquality, 'airquality.csv', sep=';', row.names=T, col.names=F)"; head -3 airquality.csv
 
 	# Specifying seperating-character, no-header row, and fields by column index (eg. Ozone 'V2' and Temp 'V5')
-
 	rplot airquality.csv 2 5 -ns ";"
 
 	# Passing r-plot a bash text object instead of file
-
 	rplot "$(cat mtcars.csv)" mpg disp -x
+
+-----------------------------------------------
 
 ### Output from above
 
