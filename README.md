@@ -48,6 +48,9 @@
 	# Passing r-plot a bash text object instead of file
 	rplot "$(cat mtcars.csv)" mpg disp -x
 
+	# Just view aggregated data without plot
+	rplot mtcars.csv gear mpg -HamzQ
+
 -----------------------------------------------
 
 ### Output from above
@@ -451,3 +454,10 @@
 	|______________________________________________________|
 	                        mpg
 	$
+	$ rplot mtcars.csv gear mpg -HamzQ
+	Aggregate function is mean
+	  gear      mpg
+	1    3 16.10667
+	2    4 24.53333
+	3    5 21.38000
+

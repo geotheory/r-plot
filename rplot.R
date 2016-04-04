@@ -66,7 +66,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
   cat('    -S   Override a default hashbar plot with scatter plot (NA values are removed)\n')
   cat('    -r   Scatterplot rows/height (default 20). Requires following value.\n')
   cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
-  cat('    -p   pch char/str (default `*`). requires value e.g. -p "." (inc. quotes)\n')
+  cat('    -p   pch char (defaults `#` and `*`). requires value e.g. -p "." (inc. quotes)\n')
   cat('    -x   Suppress summary in case of scatter plot\n')
   cat('    -z   Suppress plot (eg. use with -P or -Q)\n')
   cat('  Other:\n')
@@ -81,19 +81,15 @@ scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   #make an ASCII scatterplot on a rows X cols grid
   #pch is the ASCII character plotted
   #check arguments
-  if('-o' %in% plot_args) y = sort(y)
+  if('-o' %in% plot_args) y = sort(as.numeric(y))
   if(xlab == ylab) xlab = "Index"
-  y <- as.numeric(y)
   if(missing(x)) x <- 1:length(y)
   else x <- as.numeric(x)
-  if(length(y) != length(x))
-    stop("lengths of y and x differ")
+  if(length(y) != length(x)) stop("lengths of y and x differ")
   rows <- as.numeric(rows)
   cols <- as.numeric(cols)
-  if(rows < 1 || cols < 1)
-    stop("rows and cols must be > 1")
-  if(nchar(pch)!=1)
-    stop("pch must be exactly one character")
+  if(rows < 1 || cols < 1) stop("rows and cols must be > 1")
+  if(nchar(pch)!=1) stop("pch must be exactly one character")
 
   dat = data.frame(x, y, stringsAsFactors=F); names(dat) = c(xlab, ylab)
   # output processed data.frame to console
@@ -104,8 +100,8 @@ scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   #FIXME values in y or x could be NA or NaN
   #FIXME division by zero when max(y)-min(y) == 0
   #FIXME any better way to do this?
-  ymap <- floor((y-min(y))/(max(y)-min(y))*(rows-1))
-  xmap <- floor((x-min(x))/(max(x)-min(x))*(cols-1))
+  ymap <- floor( (y-min(y)) / (max(y)-min(y)) * (rows-1) )
+  xmap <- floor( (x-min(x)) / (max(x)-min(x)) * (cols-1) )
 
   #sort the mapped values so that the are drawn in
   #left-to-right top-to-bottom order, because thats
