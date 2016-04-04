@@ -76,6 +76,28 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)){
   quit()
 }
 
+# functions from scales: included in case R library path isn't accessible from a console call
+zero_range = function (x, tol = 1000 * .Machine$double.eps) {
+  if (length(x) == 1) return(TRUE)
+  if (length(x) != 2) stop("x must be length 1 or 2")
+  if (any(is.na(x))) return(NA)
+  if (x[1] == x[2]) return(TRUE)
+  if (all(is.infinite(x))) return(FALSE)
+  m <- min(abs(x))
+  if (m == 0) return(FALSE)
+  abs((x[1] - x[2])/m) < tol
+}
+
+rescale = function (x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE)) {
+  if (zero_range(from) || zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
+  (x - from[1])/diff(from) * diff(to) + to[1]
+}
+
+map = function(x, n){
+  x0 = min(0, min(x)); x1 = max(0, max(x))
+  pmin(floor(rescale(x, from=c(x0, x1), to=c(0,n))), n)
+}
+
 # adapted from http://biostatmatt.com/R/scat.R
 scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   #make an ASCII scatterplot on a rows X cols grid
@@ -100,51 +122,36 @@ scat <- function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   #FIXME values in y or x could be NA or NaN
   #FIXME division by zero when max(y)-min(y) == 0
   #FIXME any better way to do this?
-  ymap <- floor( (y-min(y)) / (max(y)-min(y)) * (rows-1) )
-  xmap <- floor( (x-min(x)) / (max(x)-min(x)) * (cols-1) )
+  
+  ymap <- map(y, rows)
+  xmap <- map(x, cols)
 
   #sort the mapped values so that the are drawn in
   #left-to-right top-to-bottom order, because thats
   #how they will be printed, unique because we can
   #only print one character in a cell
-  bitmap <- unique(cbind(ymap,xmap)[order(-ymap, xmap),])
 
-  #initialize row and col positions
-  #last plotted character row and column
-  row <- rows - 1
-  col <- 0
-  k = 0
-  cat(" ", rep("_", cols+4), "\n|  ", sep="")
-  cat(rep(" ", cols), "  |\n|  ", sep="")
-  for(bit in 1:nrow(bitmap)) {
-    while(bitmap[bit,1] != row) {
-      if(cols-col > 0)
-        cat(rep(" ", cols-col), sep="")
-      cat("  |")
-      k = k + 1
-      if(k == floor(rows/2)) cat('', ylab)
-      cat('\n|  ')
-      row <- row - 1
-      col <- 0
-    }
-    if(bitmap[bit,2]-col > 0)
-      cat(rep(" ", bitmap[bit,2]-col), sep="")
-    cat(pch)
-    col <- bitmap[bit, 2] + nchar(pch)
+  coords2 = as.data.frame(table(paste(xmap, ymap)), stringsAsFactors=F)
+  coords3 = data.frame(apply(data.frame(cbind(do.call('rbind', strsplit(coords2[[1]], split=' ')), coords2$Freq), stringsAsFactors=F),2,as.numeric))
+  names(coords3) = c('x','y','freq')
+  bitmap = coords3[order(-coords3$y, coords3$x),]
+
+  #print(bitmap)
+  
+  symbs = c('.', ':', '●', '█')
+
+  print(rows)
+  print(cols)
+
+  l = rep(' ', cols)
+  cat(' ', rep('-',cols), ' \n', sep='')
+  for(i in 1:rows){
+    dat = subset(bitmap, y == i)
+    ln = l
+    ln[dat$x] = symbs[dat$freq]
+    cat('|', ln, '|\n',  sep='')
   }
-  if(cols-col > 0)
-    cat(rep(" ", cols-col), sep="")
-  cat("  |\n|", rep("_", cols+4), "|\n", sep="")
-  invisible(bitmap)
-  xlab_mar = max(0, 1 + cols/2 - (nchar(xlab)/2))
-  cat(rep(' ', xlab_mar), xlab, '\n', sep="")
-  # add summary unless overriden
-  if(!'-x' %in% plot_args) {
-    cat(nrows, 'data rows plotted')
-    if(nrow(d_orig) > nrows) cat('.', nrow(d_orig) - nrows, 'rows with NA values omitted')
-    cat('\n')
-    print(summary(dat))
-  }
+  cat(' ', rep('-',cols), ' \n', sep='')
 }
 
 # read in data
@@ -252,23 +259,6 @@ for(f in c(id_fields, values_field)){
 
 plot_width = cons_width - field_data[[length(field_data)]]$pos_end
 values = d[[values_field]]
-
-# functions from scales: included in case R library path isn't accessible from a console call
-zero_range = function (x, tol = 1000 * .Machine$double.eps) {
-  if (length(x) == 1) return(TRUE)
-  if (length(x) != 2) stop("x must be length 1 or 2")
-  if (any(is.na(x))) return(NA)
-  if (x[1] == x[2]) return(TRUE)
-  if (all(is.infinite(x))) return(FALSE)
-  m <- min(abs(x))
-  if (m == 0) return(FALSE)
-  abs((x[1] - x[2])/m) < tol
-}
-
-rescale = function (x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE)) {
-  if (zero_range(from) || zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
-  (x - from[1])/diff(from) * diff(to) + to[1]
-}
 
 # scale and spacing
 plot_ind = field_data[[length(field_data)]]$pos_end + 2
