@@ -58,6 +58,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -s   sep character for input data (default `,`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
   cat('    -a   Aggregate (default `sum`) a hashbar plot data by its categorical variables\n')
   cat('    -m   Aggregate by `mean` if `-a` selected\n')
+  cat('    -M   Aggregate by `median` if `-a` selected\n')
   cat('    -l   Aggregate by `length` (count instances) if `-a` selected\n')
   cat('    -b   Histogram bins (default 15) if `-F` selected. Requires following value.\n')
   cat('         (reduce if error: `replacement has x rows, data has y`)\n')
@@ -101,6 +102,18 @@ rescale = function (x, to=c(0,1), from, finite=T) {
 }
 
 map = function(x, n) floor(rescale(x, to=c(1,n)))
+
+format_num = function(x) {
+  f1 = abs(x) >= 10000000 | abs(x) < 0.0001
+  f2 = abs(x) >= 0.0001 & abs(x) < 0.1
+  f3 = !f1 & !f2
+  out = x
+  out[f1] = formatC(x[f1], digits=3, width=0, format = "e")
+  out[f2] = formatC(x[f2], digits=3, big.mark=',', width=0, format = "f")
+  if('-l' %in% plot_args) out[f3] = formatC(x[f3], digits=2, big.mark=',', width=0, format = "fg")
+  else out[f3] = formatC(x[f3], digits=2, big.mark=',', width=0, format = "f")
+  out
+}
 
 scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   y0 = y
@@ -255,6 +268,7 @@ if(!'-F' %in% plot_args & length(id_fields) == 1) {
 if('-a' %in% plot_args) {
   fun = 'sum'
   if('-m' %in% plot_args) fun = 'mean'
+  if('-M' %in% plot_args) fun = 'median'
   if('-l' %in% plot_args) fun = 'length'
   cat('Aggregate function is', fun, '\n')
   if(length(id_fields) > 1) agg_list = as.list(d[,id_fields]) else agg_list = list(d[,id_fields])
@@ -303,13 +317,12 @@ field_data = list()
 pos_x = 1
 for(f in c(id_fields, values_field)) {
   n = length(field_data) + 1
-  maxlen = min(max(nchar(f), nchar(d[[f]])), 30)
-  vals = substr(d[[f]], 1, maxlen)
+  vals = d[[f]]
+  numerics = !is.na(suppressWarnings(as.numeric(vals)))
+  vals[numerics] = format_num(as.numeric(vals[numerics]))
+  maxlen = min(max(nchar(f), nchar(vals)), 30)
+  vals = substr(vals, 1, maxlen)
   padstr = paste0("%-", maxlen, "s")
-  if(f == values_field) {
-    numerics = !is.na(suppressWarnings(as.numeric(vals)))
-    vals[numerics] = round(as.numeric(vals[numerics]), 2)
-  }
   field_data[n] = list(list(name = sprintf(padstr, substr(f, 1, maxlen)), values = sprintf(padstr, vals),
                             pos_start = pos_x, pos_end = pos_x + maxlen + 2))
   pos_x = pos_x + maxlen + 3
