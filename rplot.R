@@ -121,7 +121,7 @@ scat = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   pr_labs = F; labs = NULL
   
   if(op > 1 & !'-y' %in% plot_args) {  # overplotting and not manually over-riden   
-    if(nchar(pch)==1 & !'-p' %in% plot_args) warning('Single character argument for -p is ignored when point overplotting is present except when -y selected.')
+    if(nchar(pch)==1 & '-p' %in% plot_args) warning('Single character argument for -p is ignored when point overplotting is present except when -y selected.')
     # cluster overplots to map to symbols
     summary$grp = summary$freq
     if(length(unique(summary$freq)) > 4) {
