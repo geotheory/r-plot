@@ -103,15 +103,21 @@ rescale = function (x, to=c(0,1), from, finite=T) {
 
 map = function(x, n) floor(rescale(x, to=c(1,n)))
 
+# because formatC can't quite cut it
 format_num = function(x) {
-  f1 = abs(x) >= 10000000 | abs(x) < 0.0001
-  f2 = abs(x) >= 0.0001 & abs(x) < 0.1
-  f3 = !f1 & !f2
+  f1 = abs(x) >= 10000000
+  f2 = abs(x) >= 100 & abs(x) < 10000000
+  f3 = abs(x) >= 1 & abs(x) < 100
+  f4 = abs(x) >= 0.001 & abs(x) < 1
+  f5 = x == 0
+  f6 = !f1 & !f2 & !f3 & !f4 & !f5
   out = x
-  out[f1] = formatC(x[f1], digits=3, width=0, format = "e")
-  out[f2] = formatC(x[f2], digits=3, big.mark=',', width=0, format = "f")
-  if('-l' %in% plot_args) out[f3] = formatC(x[f3], digits=2, big.mark=',', width=0, format = "fg")
-  else out[f3] = formatC(x[f3], digits=2, big.mark=',', width=0, format = "f")
+  out[f1] = formatC(x[f1], digits=2, format = "e")
+  out[f2] = formatC(round(x[f2], 0), digits=1, big.mark=',', format = "f", drop0trailing=T)
+  out[f3] = formatC(round(x[f3], 2), digits=2, big.mark=',', format = "f", drop0trailing=T)
+  out[f4] = formatC(x[f4], digits=3, format = "f", drop0trailing=T)
+  out[f5] = '0'
+  out[f6] = formatC(x[f6], digits=2, format = "e")
   out
 }
 
