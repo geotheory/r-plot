@@ -67,7 +67,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
   cat('    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,\n')
   cat('         `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p "."` (eg. with -y)\n')
-  cat('         or a 4 char string eg. ".°*@" to change overplot symbols (inc. quotes)\n\n')
+  cat('         or a 4 char string eg. ".°*@" to change overplot symbols (inc. quotes)\n')
   cat('    -R   Add r2 correlation (bivariate only))\n')
   cat('    -x   Suppress summary in case of scatterplot\n')
   cat('    -y   Suppress scatterplot point symbols (that show overplotting)\n')

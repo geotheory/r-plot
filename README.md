@@ -9,8 +9,8 @@
 	# Get some data
 	Rscript -e "write.csv(mtcars, 'mtcars.csv')"; head -6 mtcars.csv
 
-	# Scatterplot - car weight vs fuel efficiency
-	Rscript rplot.R mtcars.csv wt mpg
+	# Scatterplot - car weight vs fuel efficiency (with correlation)
+	Rscript rplot.R mtcars.csv wt mpg -R
 
 	# Hashplot - car fuel efficiencies
 	Rscript rplot.R mtcars.csv 1 mpg
@@ -105,7 +105,7 @@
 	    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,
 	         `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p "."` (eg. with -y)
 	         or a 4 char string eg. ".°*@" to change overplot symbols (inc. quotes)
-
+	    -R   Add r2 correlation (bivariate only))
 	    -x   Suppress summary in case of scatterplot
 	    -y   Suppress scatterplot point symbols (that show overplotting)
 	    -z   Suppress plot (eg. use with -P or -Q)
@@ -125,9 +125,9 @@
 	"Hornet 4 Drive",21.4,6,258,110,3.08,3.215,19.44,1,0,3,1
 	"Hornet Sportabout",18.7,8,360,175,3.15,3.44,17.02,0,0,3,2
 
-	$ # Scatterplot - car weight vs fuel efficiency
+	$ # Scatterplot - car weight vs fuel efficiency (with correlation)
 
-	$ Rscript rplot.R mtcars.csv wt mpg
+	$ Rscript rplot.R mtcars.csv wt mpg -R
 	 __________________________________________________
 	|    .                                             |  Points
 	|        .                                         |  .  1  (x̄ 1.0)
@@ -148,7 +148,7 @@
 	|                             .                    |
 	|                                                  |
 	|                                                  |
-	|                                              .  .|
+	|                                              .  .|  R²=-0.868
 	|__________________________________________________|
 	                         wt
 	32 data rows plotted
