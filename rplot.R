@@ -314,7 +314,7 @@ if('-F' %in% plot_args){
   grps$means = as.numeric(lapply(sapply(labs, strsplit, split=','), function(i) mean(as.numeric(i))))
   pretty_labs = pretty(grps$means, 4)
   pretty_labs = pretty_labs[pretty_labs >= ran[1] & pretty_labs <= ran[2]]
-  ids = sapply(pretty_labs, function(x){ which(abs(grps$means-x)==min(abs(grps$means-x)))} )
+  ids = sapply(pretty_labs, function(x){ which(abs(grps$means-x)==min(abs(grps$means-x)))[1]} ) # closest group to assign label
   grps$lab = ''
   grps$lab[ids] = paste('--', pretty_labs, '--')
   d = grps[,c(4,2)]
