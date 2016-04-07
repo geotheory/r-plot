@@ -61,7 +61,6 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -M   Aggregate by `median` if `-a` selected\n')
   cat('    -l   Aggregate by `length` (count instances) if `-a` selected\n')
   cat('    -b   Histogram bins (default 15) if `-F` selected. Requires following value.\n')
-  cat('         (reduce if error: `replacement has x rows, data has y`)\n')
   cat('  Plotting:\n')
   cat('    -o   Reorder hashbar chart by value (also reorders data.frames)\n')
   cat('    -H   Override default scatterplot with hashbar plot\n')
@@ -306,6 +305,11 @@ if('-F' %in% plot_args){
   cats = as.numeric(cuts)
   labs = levels(cuts)
   grps = as.data.frame(table(cats), stringsAsFactors=F)
+  grps$cats = as.numeric(grps$cats)
+  fullset = min(grps$cats):max(grps$cats)
+  missing = fullset[!fullset %in% grps$cats]
+  for(m in missing) grps = rbind(grps, data.frame(cats=m, Freq=0))
+  grps = grps[order(grps$cats),]
   for(i in c('\\[', '\\]', '\\(')) labs = gsub(i, '', labs)
   grps$means = as.numeric(lapply(sapply(labs, strsplit, split=','), function(i) mean(as.numeric(i))))
   pretty_labs = pretty(grps$means, 4)
