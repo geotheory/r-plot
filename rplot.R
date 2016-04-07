@@ -6,7 +6,7 @@
 args_in = commandArgs(trailingOnly=T)
 
 # arguments that require a following value (e.g. "-p '+'")
-pars = list(sep=c('-s',','), pch=c('-p','*'), x=c('-c',50), y=c('-r',20))
+pars = list(sep=c('-s',','), pch=c('-p','*'), x=c('-c',50), y=c('-r',20), bins=c('-b',15))
 
 # split up combined arguments (e.g. '-am' for aggregate by mean)
 args = unlist(sapply(args_in, function(a) {
@@ -59,10 +59,13 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -a   Aggregate (default `sum`) a hashbar plot data by its categorical variables\n')
   cat('    -m   Aggregate by `mean` if `-a` selected\n')
   cat('    -l   Aggregate by `length` (count instances) if `-a` selected\n')
+  cat('    -b   Histogram bins (default 15) if `-F` selected. Requires following value.\n')
+  cat('         (reduce if error: `replacement has x rows, data has y`)\n')
   cat('  Plotting:\n')
   cat('    -o   Reorder hashbar chart by value (also reorders data.frames)\n')
-  cat('    -H   Override a default scatterplot with hashbar plot\n')
-  cat('    -S   Override a default hashbar plot with scatterplot (NA values are removed)\n')
+  cat('    -H   Override default scatterplot with hashbar plot\n')
+  cat('    -S   Override default hashbar plot with scatterplot (NA values are removed)\n')
+  cat('    -F   Override default scatter/hash plot with frequency histogram (requires numeric data)\n')
   cat('    -r   Scatterplot rows/height (default 20). Requires following value.\n')
   cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
   cat('    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,\n')
@@ -124,6 +127,7 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   
   if(op > 1 & !'-y' %in% plot_args) {  # overplotting and not manually over-riden   
     if(nchar(pch)==1 & '-p' %in% plot_args) warning('Single character argument for -p is ignored when point overplotting is present except when -y selected.')
+    
     # cluster overplots to map to symbols
     summary$grp = summary$freq
     if(length(unique(summary$freq)) > 4) {
@@ -133,9 +137,10 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
     } else{
       summary$grp = as.numeric(factor(summary$freq))
     }
-    
+
     # symbol labels
-    if(length(unique(summary$freq))) {
+    freqs = sort(unique(summary$freq))
+    if(!identical(freqs, c(1,2)) & !identical(freqs, 1)) { # ie. not points representable literally by comb of '.' and ':'
       pr_labs = T
       # data break points
       op_data = unique(summary[ order(summary$freq), 3:4 ])
@@ -149,11 +154,12 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
       }
       for(i in 1:nrow(labs)) {
         labs$lab[i] = ifelse(labs$p0[i] == labs$p1[i], labs$p0[i], paste0(labs$p0[i], '-', labs$p1[i]))
-        labs$lab[i] = paste0(symbs[i], '  ', labs$lab[i], '  (x̄ ', format(round(labs$x[i],1),nsmall=1), ')')
+        lab_mean = ifelse(length(grep('-', labs$lab[i]))>0, paste0('  (x̄ ', format(round(labs$x[i],1),nsmall=1), ')'), '')
+        labs$lab[i] = paste0(symbs[i], '  ', labs$lab[i], lab_mean)
       }
       labs = c('Points', labs$lab)
     }
-  } else { # only 2 types of 
+  } else { # only 2 types of point
     symbs = pch   
     summary$grp = 1
   }
@@ -230,9 +236,9 @@ d = na.omit(d[,c(id_fields, values_field), drop=F])
 nrows = nrow(d) # to calc NA removals
 
 # scatterplot if 2 fully numeric/NA variables or manually specified
-if(length(id_fields) == 1) {
+if(!'-F' %in% plot_args & length(id_fields) == 1) {
   v = d[[id_fields]]
-  numvals = suppressWarnings(as.numeric(v[!is.na(v)]))
+  numvals = suppressWarnings(as.numeric( v[!is.na(v)] ))
   all_numeric = all(!is.na(numvals))
   plot_scatter = F
   if(all_numeric & !'-H' %in% plot_args) plot_scatter = T
@@ -271,6 +277,26 @@ if('-o' %in% plot_args) d = d[order(d[[values_field]], decreasing=T),]
 
 # output processed data.frame to console
 if('-Q' %in% plot_args) print(head(d,1000))
+
+# histogram for single numeric variable
+if('-F' %in% plot_args){
+  ran = range(d[[values_field]])
+  brks = seq(ran[1], ran[2], length.out = as.numeric(pars$bins[2]))
+  cuts = cut(d[[values_field]], brks, include.lowest=T)
+  cats = as.numeric(cuts)
+  labs = levels(cuts)
+  grps = as.data.frame(table(cats), stringsAsFactors=F)
+  for(i in c('\\[', '\\]', '\\(')) labs = gsub(i, '', labs)
+  grps$means = as.numeric(lapply(sapply(labs, strsplit, split=','), function(i) mean(as.numeric(i))))
+  pretty_labs = pretty(grps$means, 4)
+  pretty_labs = pretty_labs[pretty_labs >= ran[1] & pretty_labs <= ran[2]]
+  ids = sapply(pretty_labs, function(x){ which(abs(grps$means-x)==min(abs(grps$means-x)))} )
+  grps$lab = ''
+  grps$lab[ids] = paste('--', pretty_labs, '--')
+  d = grps[,c(4,2)]
+  id_fields = values_field; values_field = 'frequency'
+  names(d) = c(id_fields, values_field)
+}
 
 # calculate column widths
 field_data = list()
