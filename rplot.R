@@ -68,6 +68,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,\n')
   cat('         `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p "."` (eg. with -y)\n')
   cat('         or a 4 char string eg. ".°*@" to change overplot symbols (inc. quotes)\n\n')
+  cat('    -R   Add r2 correlation (bivariate only))\n')
   cat('    -x   Suppress summary in case of scatterplot\n')
   cat('    -y   Suppress scatterplot point symbols (that show overplotting)\n')
   cat('    -z   Suppress plot (eg. use with -P or -Q)\n')
@@ -98,7 +99,8 @@ rescale = function (x, to=c(0,1), from, finite=T) {
 
 map = function(x, n) floor(rescale(x, to=c(1,n)))
 
-scat = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
+scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
+  y0 = y
   if('-o' %in% plot_args) y = sort(as.numeric(y))
   if(xlab == ylab) xlab = "Index"
   if(missing(x)) x <- 1:length(y)
@@ -168,6 +170,7 @@ scat = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
     if(pr_labs & i <= length(labs)) cat(' ', labs[i], sep='')  # point symbol key
     k = k + 1
     if(k == ceiling(rows/2)) cat('', ylab)                     # y label
+    if(k == rows) if('-R' %in% plot_args & xlab!='Index') cat(' R²=', round(cor(x,y0),3), sep='')
     cat('\n')
   }
   cat('|', rep('_',cols), '|\n', sep='')
@@ -238,7 +241,7 @@ if(length(id_fields) == 1) {
     if(values_field == id_fields) {    # ie. only a single field supplied
       dat = na.omit(data.frame(x = 1:length(v), y = d[[values_field]], stringsAsFactors=F))
     } else dat = na.omit(data.frame(x = suppressWarnings(as.numeric(v)), y = d[[values_field]], stringsAsFactors=F))
-    scat(dat$x, dat$y, cols=as.numeric(pars$x[2]), rows=as.numeric(pars$y[2]), pch=pars$pch[2], xlab=id_fields, ylab=values_field)
+    scatter_plot(dat$x, dat$y, cols=as.numeric(pars$x[2]), rows=as.numeric(pars$y[2]), pch=pars$pch[2], xlab=id_fields, ylab=values_field)
     quit()
   }
 }
