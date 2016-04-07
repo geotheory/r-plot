@@ -65,7 +65,7 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -o   Reorder hashbar chart by value (also reorders data.frames)\n')
   cat('    -H   Override default scatterplot with hashbar plot\n')
   cat('    -S   Override default hashbar plot with scatterplot (NA values are removed)\n')
-  cat('    -F   Override default scatter/hash plot with frequency histogram (requires numeric data)\n')
+  cat('    -F   Override default scatter/hash plot with frequency histogram (requires single numeric field)\n')
   cat('    -r   Scatterplot rows/height (default 20). Requires following value.\n')
   cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
   cat('    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,\n')

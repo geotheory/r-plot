@@ -36,6 +36,9 @@
 	# Change scatterplot size
 	rplot iris.csv Sepal.Width -ox -r 40 -c 80
 
+	# Histogram of a single numeric variable
+	rplot iris.csv Sepal.Width -F
+
 	# Single categorical variable frequency (ie. aggregate by length)
 	rplot iris.csv Species -al
 
@@ -368,6 +371,26 @@
 	|.                                                                               |
 	|________________________________________________________________________________|
 	                                      Index
+
+	$ # Histogram of a single numeric variable
+	
+	$ rplot iris.csv Sepal.Width -F
+	150 data rows plotted
+	Sepal.Width   frequency
+	-- 2 --       1           ##
+	              7           ##############
+	-- 2.5 --     11          ######################
+	              5           ##########
+	              23          ##############################################
+	-- 3 --       36          ########################################################################
+	              24          ################################################
+	              6           ############
+	-- 3.5 --     18          ####################################
+	              7           ##############
+	              6           ############
+	-- 4 --       3           ######
+	              2           ####
+	              1           ##
 
 	$ # Single categorical variable frequency (ie. aggregate by length)
 
