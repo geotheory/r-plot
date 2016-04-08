@@ -293,18 +293,20 @@ field_names = field_args[2:(length(field_args))]
 
 # interpret field names - check if valid as name or column index
 for(i in length(field_names):1) {
-  f = as.character(field_names[i])
+  f = field_names[i]
   badfield = F
-  if(!f %in% names(d)){                 # not a valid col name
-    if(is.numeric(num(f))){             # is possible number
+  match = pmatch(f, names(d))
+  if(is.na(match)){                        # not a valid col name
+    if(is.numeric(num(f))){                # is possible number
       f = as.numeric(f)
-      if(f <= ncol(d)){                 # is within col index range
-        field_names[i] = names(d)[f]    # change to col name
+      if(f <= ncol(d)){                    # is within col index range
+        field_names[i] = names(d)[f]       # change to col name
       } else badfield = T
     } else badfield = T
-  }
+  } else field_names[i] = names(d)[match]  # in case partial match
   if(badfield) {
-    cat('fieldname not valid name or column index:', f, '\n')
+    warning(paste('fieldname not valid name or column index:', f))
+    quit()
     field_names = field_names[-i]
   }
 }
