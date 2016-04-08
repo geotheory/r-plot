@@ -6,7 +6,7 @@
 args_in = commandArgs(trailingOnly=T)
 
 # arguments that require a following value (e.g. "-p '+'")
-pars = list(sep=c('-s',','), pch=c('-p','*'), x=c('-c',50), y=c('-r',20), bins=c('-b',15))
+pars = list(sep=c('-s',','), quote=c('-q',"\"'"), pch=c('-p','*'), x=c('-c',50), y=c('-r',20), bins=c('-b',15), X=c('-X','%'))
 
 # split up combined arguments (e.g. '-am' for aggregate by mean)
 args = unlist(sapply(args_in, function(a) {
@@ -56,6 +56,8 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('  Data handling:\n')
   cat('    -n   Specify no header row for input data. Use col indices instead\n')
   cat('    -s   sep character for input data (default `,`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
+  cat('    -q   quote character for input data (default `"`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
+  cat('    -X   Non-numeric characters to remove from numbers (other than "{space} , $ £ € %")\n')
   cat('    -a   Aggregate (default `sum`) a hashbar plot data by its categorical variables\n')
   cat('    -m   Aggregate by `mean` if `-a` selected\n')
   cat('    -M   Aggregate by `median` if `-a` selected\n')
@@ -77,8 +79,9 @@ if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat('    -z   Suppress plot (eg. use with -P or -Q)\n')
   cat('  Other:\n')
   cat('    -h   Call this help (also --help)\n')
-  cat('    -P   Output raw data.frame to console (truncated 1000 rows)\n')
-  cat('    -Q   Output processed data.frame to console (truncated 1000 rows)\n\n')
+  cat('    -O   Inspect data.frame before and after numeric parsing and quit\n\n')
+  cat('    -P   Output raw data.frame to console and quit (truncated 1000 rows)\n')
+  cat('    -Q   Output processed data.frame to console and quit (truncated 1000 rows)\n\n')
   quit()
 }
 
@@ -102,8 +105,18 @@ rescale = function (x, to=c(0,1), from, finite=T) {
 
 map = function(x, n) floor(rescale(x, to=c(1,n)))
 
+# coerce set to numeric if possible, else return FALSE
+num = function(n){
+  if(class(n) %in% c('integer','numeric','double')) return(n)
+  n = gsub(paste(c(' ',',','$','£','€','%',pars$X[2]), collapse='|'), '', n)
+  is.num = all(!is.na(suppressWarnings(as.numeric(na.omit(n)))))
+  if(is.num) return(as.numeric(n))
+  return(F)
+}
+
 # because formatC can't quite cut it
 format_num = function(x) {
+  if(length(unique(nchar(x)))==1 & sum(x%%1) == 0) return(x) # year
   f1 = abs(x) >= 10000000
   f2 = abs(x) >= 100 & abs(x) < 10000000
   f3 = abs(x) >= 1 & abs(x) < 100
@@ -133,7 +146,10 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   # output processed data.frame to console
   orig_dat = data.frame(x, y, stringsAsFactors=F)
   names(orig_dat) = c(xlab, ylab)
-  if('-Q' %in% plot_args) print(head(orig_dat,1000))
+  if('-Q' %in% plot_args) {
+    print(head(orig_dat,1000))
+    quit()
+  }
   if('-z' %in% plot_args) quit()
   
   # rescale to grid and count point overplotting
@@ -210,6 +226,20 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   }
 }
 
+# report d.f. column classes
+inspect_df = function (obj) {
+    cat('d.f. dimensions: ', dim(obj), '\n')
+    try({
+        r = NULL
+        for (i in 1:ncol(obj)) {
+            r = c(r, class(obj[[i]]))
+        }
+        names(r) = names(obj)
+        print(r)
+    }, silent = FALSE)
+    print(head(obj, 3))
+}
+
 # read in data
 cons_width = min(100, as.integer(system('tput cols', intern=T)))
 txt = field_args[1]
@@ -217,26 +247,45 @@ rows = length(strsplit(txt, split='\n')[[1]])
 
 # data from text blob argument or csv file
 if('-n' %in% plot_args) header = F else header = T
-if(rows == 1) d = read.table(txt, sep=pars$sep[2], stringsAsFactors=F, header=header, row.names=NULL)
-if(rows > 1) d = read.table(text=txt, header=header, sep=pars$sep[2], stringsAsFactors=F)
-d_orig = d
+if(rows == 1) d = read.table(txt, sep=pars$sep[2], stringsAsFactors=F, header=header, row.names=NULL, quote=pars$quote[2])
+if(rows > 1) d = read.table(text=txt, header=header, sep=pars$sep[2], stringsAsFactors=F, quote=pars$quote[2])
+
+if("-O" %in% plot_args){
+  cat('\nRaw data as read-in:\n')
+  inspect_df(d)
+}
+
+# parse numerics
+for(i in 1:ncol(d)){
+  nums = num( d[,i] )                    # check if numeric/coercible
+  if(is.numeric(nums[1])) d[,i] = nums
+}
+d_orig = d # backup as is
+
+if("-O" %in% plot_args){
+  cat('\nNumerically parsed data:\n')
+  inspect_df(d)
+  cat('\n')
+  quit()
+}
 
 # output data.frame to console
-if('-P' %in% plot_args) print(head(d, 1000))
+if('-P' %in% plot_args){
+  print(head(d, 1000))
+  quit()
+}
 
 field_names = field_args[2:(length(field_args))]
 
-# test coercible to numeric
-num = function(n) !is.na(suppressWarnings(as.numeric(n)))
-
 # interpret field names - check if valid as name or column index
 for(i in length(field_names):1) {
-  f = field_names[i]
+  f = as.character(field_names[i])
   badfield = F
-  if(!f %in% names(d)) {                          # not a valid col name
-    if(num(f)) {                                  # is possible number
-      if(as.numeric(f) <= ncol(d)) {              # is possible col index range
-        field_names[i] = names(d)[as.numeric(f)] # change to col name
+  if(!f %in% names(d)){                 # not a valid col name
+    if(is.numeric(num(f))){             # is possible number
+      f = as.numeric(f)
+      if(f <= ncol(d)){                 # is within col index range
+        field_names[i] = names(d)[f]    # change to col name
       } else badfield = T
     } else badfield = T
   }
@@ -280,11 +329,9 @@ if('-a' %in% plot_args) {
   if(fun == 'length') {
     d = aggregate(rep(1,nrow(d)), by=agg_list, FUN=sum, na.rm=T, simplify=T)
   } else d = aggregate(d[[values_field]], by=agg_list, FUN=fun, na.rm=T, simplify=T)
-  if(id_fields == values_field) values_field = fun # ie. 'length'
-} else{
   if(length(unique(c(id_fields, values_field))) == 1) {
+    values_field = fun # ie. 'length'
     d[[id_fields]] = 1:nrow(d)
-    id_fields = 'Index'
   }
 }
 
@@ -295,7 +342,10 @@ names(d) = c(id_fields, values_field)
 if('-o' %in% plot_args) d = d[order(d[[values_field]], decreasing=T),]
 
 # output processed data.frame to console
-if('-Q' %in% plot_args) print(head(d,1000))
+if('-Q' %in% plot_args){
+  print(head(d,1000))
+  quit()
+}
 
 # histogram for single numeric variable
 if('-F' %in% plot_args){
@@ -336,6 +386,8 @@ for(f in c(id_fields, values_field)) {
   field_data[n] = list(list(name = sprintf(padstr, substr(f, 1, maxlen)), values = sprintf(padstr, vals),
                             pos_start = pos_x, pos_end = pos_x + maxlen + 2))
   pos_x = pos_x + maxlen + 3
+  char_deficit = maxlen - nchar(field_data[[n]]$values)  # fix for sprintf bug that ignores special characters when padding
+  field_data[[n]]$values = paste0(field_data[[n]]$values, sapply(char_deficit, function(i) paste(rep(' ',i), collapse='')))
 }
 
 plot_width = cons_width - field_data[[length(field_data)]]$pos_end
@@ -350,7 +402,6 @@ if(min(values) < 0 & max(values) > 0) {
 } else if(min(values) >= 0) {
   ran = c(0, max(values))     # all positive, scale to zero
 } else{
-  #values = -values           # all negative, scale to zero
   ran = c(min(values), 0)     # still plot hashbars from left axis
 }
 
@@ -375,4 +426,3 @@ for(i in 1:length(values)) {
   cat(rep(' ', spaces[i]), sep='')
   cat(rep(pch, hashes[i]), '\n', sep='')
 }
-
