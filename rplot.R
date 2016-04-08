@@ -7,29 +7,32 @@ args_in = commandArgs(trailingOnly=T)
 
 # arguments that require a following value (e.g. "-p '+'")
 pars = list(sep=c('-s',','), quote=c('-q',"\"'"), pch=c('-p','*'), x=c('-c',50), 
-  y=c('-r',20), bins=c('-b',15), X=c('-X','%'), size=c('-d',NA))
+  y=c('-r',20), bins=c('-b',15), X=c('-X','%'), size=c('-d',NA), asp=c('-A',1))
 
 # split up combined arguments (e.g. '-am' for aggregate by mean)
-args = unlist(sapply(args_in, function(a) {
+args = c(unlist(sapply(args_in, function(a) {
     if(substr(a,1,1)=='-') return(paste0('-',strsplit(substr(a,2,100),'')[[1]])) else a
-  }), use.names = F)
+  }), use.names = F), '--') #  '--' added in case -A included without an argument
 
 # update pars argument update received
 for(i in 1:length(pars)) {
   p = pars[[i]]
   if(p[1] %in% args) {
     n = match(p[1], args) + 1
-    if(p[1] == '-s') {
-      if(is.na(args[n])) args[n] = ""       # whitespace seperator
-      if(args[n] == "\\t") args[n] = "\t"   # string to tab char
+    if(substr(args[n],1,1) != '-') {
+      if(p[1] == '-s') {
+        if(is.na(args[n])) args[n] = ""       # whitespace seperator
+        if(args[n] == "\\t") args[n] = "\t"   # string to tab char
+      }
+      pars[[i]][2] = args[n]
+      args = args[-n]
     }
-    pars[[i]][2] = args[n]
-    args = args[-n]
   }
 }
 
 plot_args = args[substr(args, 1, 1) == '-']
 field_args = args[!substr(args, 1, 1) == '-']
+if('-A' %in% plot_args) if(is.na(pars$asp[2])) pars$asp[2] = 1 # when no argument provided
 
 if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
   cat("**********************
@@ -67,15 +70,16 @@ OPTIONS:
     -m   Aggregate by `mean` if `-a` selected
     -M   Aggregate by `median` if `-a` selected
     -l   Aggregate by `length` (count instances) if `-a` selected
-    -b   Histogram bins (default 15) if `-F` selected. Requires following value.
+    -b   Histogram bins (default 15) if `-F` selected. Requires following value
   Plotting:
     -o   Reorder hashbar chart by value (also reorders data.frames)
     -H   Override default scatterplot with hashbar plot
     -S   Override default hashbar plot with scatterplot (NA values are removed)
     -F   Override default scatter/hash plot with frequency histogram (requires single numeric field)
-    -r   Scatterplot rows/height (default 20). Requires following value.
-    -c   Scatterplot cols/width (default 50). Requires following value.
+    -r   Scatterplot rows/height (default 20). Requires following value
+    -c   Scatterplot cols/width (default 50). Requires following value
     -d   Quick plot-size tool. Requires argument: 'l'/'s' large/small
+    -A   Fix y/x aspect ratio. Without argument defaults to 1, otherwise value given
     -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,
          `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p \".\"` (eg. with -y)
          or a 4 char string eg. \".°*@\" to change overplot symbols (inc. quotes)
@@ -143,6 +147,10 @@ format_num = function(x) {
 scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   y0 = y
   if('-o' %in% plot_args) y = sort(as.numeric(y))
+  if('-A' %in% plot_args){
+    data_asp = diff(range(y)) / diff(range(x))
+    rows = ceiling(cols * data_asp * as.numeric(pars$asp[2]) * 2/5)
+  }
   if(xlab == ylab) xlab = "Index"
   if(missing(x)) x <- 1:length(y)
   else x <- as.numeric(x)
