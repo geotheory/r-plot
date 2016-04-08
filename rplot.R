@@ -6,7 +6,8 @@
 args_in = commandArgs(trailingOnly=T)
 
 # arguments that require a following value (e.g. "-p '+'")
-pars = list(sep=c('-s',','), quote=c('-q',"\"'"), pch=c('-p','*'), x=c('-c',50), y=c('-r',20), bins=c('-b',15), X=c('-X','%'))
+pars = list(sep=c('-s',','), quote=c('-q',"\"'"), pch=c('-p','*'), x=c('-c',50), 
+  y=c('-r',20), bins=c('-b',15), X=c('-X','%'), size=c('-d',NA))
 
 # split up combined arguments (e.g. '-am' for aggregate by mean)
 args = unlist(sapply(args_in, function(a) {
@@ -74,6 +75,7 @@ OPTIONS:
     -F   Override default scatter/hash plot with frequency histogram (requires single numeric field)
     -r   Scatterplot rows/height (default 20). Requires following value.
     -c   Scatterplot cols/width (default 50). Requires following value.
+    -d   Quick plot-size tool. Requires argument: 'l'/'s' large/small
     -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,
          `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p \".\"` (eg. with -y)
          or a 4 char string eg. \".°*@\" to change overplot symbols (inc. quotes)
@@ -158,6 +160,13 @@ scatter_plot = function(x, y, cols=50, rows=20, pch="*", xlab="x", ylab="Y") {
   if('-z' %in% plot_args) quit()
   
   # rescale to grid and count point overplotting
+  if('-d' %in% plot_args){
+    if(pars$size[2] == 'l'){
+      rows = 40; cols = 100;
+      } else if(pars$size[2] == 's'){
+        rows = 10; cols = 25;
+        } else warning('-d parameter requires either \'l\' or \'s\' input')
+  }
   summary = as.data.frame(table(paste(map(x,cols), map(-y,rows))), stringsAsFactors=F)  # summarise
   summary = data.frame(apply(cbind(do.call('rbind', strsplit(summary[[1]], split=' ')), summary$Freq),2,as.numeric)) # parse
   names(summary) = c('x','y','freq')
