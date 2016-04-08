@@ -31,57 +31,62 @@ plot_args = args[substr(args, 1, 1) == '-']
 field_args = args[!substr(args, 1, 1) == '-']
 
 if(any(c('-h','--help') %in% args_in | '-h' %in% plot_args)) {
-  cat('\n**********************\n')
-  cat('******* R-PLOT *******\n')
-  cat('**********************\n\n')
-  cat('This library plots a scatterplot or hashbar plot (bars made of hashes!) of a csv or a similarly formatted\n')
-  cat('file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.\n')
-  cat('Required arguments: csv file/string, then column name(s)/index(ices) (values-column last for hashbars)\n\n')
-  cat("NB read.table check.names=T so e.g. numeric colnames prepend 'X' and those with spaces have spaces replaced by '.'.\n")
-  cat("Use '-Pz | head' to suppress the plot and see the colnames that are read in..\n\n")
-  cat('USAGE\n')
-  cat('Example csv call - scatterplot (by column name):\n')
-  cat('    "Rscript rplot.R file.csv num_field1 num_field2"\n')
-  cat('Example csv call - scatterplot (by column index):\n')
-  cat('    "Rscript rplot.R file.csv col#1 col#3"\n')
-  cat('Example csv call - hashbar plot:\n')
-  cat('    "Rscript rplot.R file.csv id_field1 id_field2 value_field"\n')
-  cat('Example csv text string call:\n')
-  cat('    "Rscript rplot.R "$(cat file.csv)" id_field value_field"\n')
-  cat('For convenience you can set up an alias in .bash_profile or equivalent, e.g.\n')
-  cat('    "rplot() { Rscript /pathto/rplot.R "$1" ${*:2}; }"\n')
-  cat('and call with:\n')
-  cat('    "rplot file.csv field1 field2 etc.."\n\n')
-  cat('OPTIONS:\n')
-  cat('  Data handling:\n')
-  cat('    -n   Specify no header row for input data. Use col indices instead\n')
-  cat('    -s   sep character for input data (default `,`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
-  cat('    -q   quote character for input data (default `"`). Requires value e.g. ";"  "\\t"  "" (inc. quotes)\n')
-  cat('    -X   Non-numeric characters to remove from numbers (other than "{space} , $ £ € %")\n')
-  cat('    -a   Aggregate (default `sum`) a hashbar plot data by its categorical variables\n')
-  cat('    -m   Aggregate by `mean` if `-a` selected\n')
-  cat('    -M   Aggregate by `median` if `-a` selected\n')
-  cat('    -l   Aggregate by `length` (count instances) if `-a` selected\n')
-  cat('    -b   Histogram bins (default 15) if `-F` selected. Requires following value.\n')
-  cat('  Plotting:\n')
-  cat('    -o   Reorder hashbar chart by value (also reorders data.frames)\n')
-  cat('    -H   Override default scatterplot with hashbar plot\n')
-  cat('    -S   Override default hashbar plot with scatterplot (NA values are removed)\n')
-  cat('    -F   Override default scatter/hash plot with frequency histogram (requires single numeric field)\n')
-  cat('    -r   Scatterplot rows/height (default 20). Requires following value.\n')
-  cat('    -c   Scatterplot cols/width (default 50). Requires following value.\n')
-  cat('    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,\n')
-  cat('         `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p "."` (eg. with -y)\n')
-  cat('         or a 4 char string eg. ".°*@" to change overplot symbols (inc. quotes)\n')
-  cat('    -R   Add r2 correlation (bivariate only))\n')
-  cat('    -x   Suppress summary in case of scatterplot\n')
-  cat('    -y   Suppress scatterplot point symbols (that show overplotting)\n')
-  cat('    -z   Suppress plot (eg. use with -P or -Q)\n')
-  cat('  Other:\n')
-  cat('    -h   Call this help (also --help)\n')
-  cat('    -O   Inspect data.frame before and after numeric parsing and quit\n\n')
-  cat('    -P   Output raw data.frame to console and quit (truncated 1000 rows)\n')
-  cat('    -Q   Output processed data.frame to console and quit (truncated 1000 rows)\n\n')
+  cat("**********************
+******  R-PLOT  ******
+**********************
+
+This library plots a scatterplot or hashbar plot (bars made of hashes!) of a csv or a similarly formatted
+file or string in your console. If 2 numeric id_fields are provided a scatterplot will default, else hashbars.
+Required arguments: csv file/string, then column name(s)/index(ices) (values-column last for hashbars)
+
+NB read.table check.names=T so e.g. numeric colnames prepend 'X' and those with spaces have spaces replaced by '.'.
+Use '-Pz | head' or '-O' to suppress plots and investigate data read-in.
+
+USAGE
+Example csv call - scatterplot (by column name):
+    \"Rscript rplot.R file.csv num_field1 num_field2\"
+Example csv call - scatterplot (by column index):
+    \"Rscript rplot.R file.csv col#1 col#3\"
+Example csv call - hashbar plot:
+    \"Rscript rplot.R file.csv id_field1 id_field2 value_field\"
+Example csv text string call:
+    \"Rscript rplot.R \"$(cat file.csv)\" id_field value_field\"
+For convenience you can set up an alias in .bash_profile or equivalent, e.g.
+    \"rplot() { Rscript /pathto/rplot.R \"$1\" ${*:2}; }\"
+and call with:
+    \"rplot file.csv field1 field2 etc..\"
+
+OPTIONS:
+  Data handling:
+    -n   Specify no header row for input data. Use col indices instead
+    -s   sep character for input data (default `,`). Requires value e.g. \";\"  \"\t\"  \"\" (inc. quotes)
+    -q   quote character for input data. Requires value e.g. \"'\" or '\"' (inc. outer quotes)
+    -X   Non-numeric characters to remove from numbers (other than \"{space} , $ £ € %\")
+    -a   Aggregate (default `sum`) a hashbar plot data by its categorical variables
+    -m   Aggregate by `mean` if `-a` selected
+    -M   Aggregate by `median` if `-a` selected
+    -l   Aggregate by `length` (count instances) if `-a` selected
+    -b   Histogram bins (default 15) if `-F` selected. Requires following value.
+  Plotting:
+    -o   Reorder hashbar chart by value (also reorders data.frames)
+    -H   Override default scatterplot with hashbar plot
+    -S   Override default hashbar plot with scatterplot (NA values are removed)
+    -F   Override default scatter/hash plot with frequency histogram (requires single numeric field)
+    -r   Scatterplot rows/height (default 20). Requires following value.
+    -c   Scatterplot cols/width (default 50). Requires following value.
+    -p   pch char (defaults: `#` hashbars, `*` scatterplots without overplotting,
+         `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p \".\"` (eg. with -y)
+         or a 4 char string eg. \".°*@\" to change overplot symbols (inc. quotes)
+    -R   Add r2 correlation (bivariate only))
+    -x   Suppress summary in case of scatterplot
+    -y   Suppress scatterplot point symbols (that show overplotting)
+    -z   Suppress plot (eg. use with -P or -Q)
+  Other:
+    -h   Call this help (also --help)
+    -O   Inspect data.frame before and after numeric parsing and quit
+    -P   Output raw data.frame to console and quit (truncated 1000 rows)
+    -Q   Output processed data.frame to console and quit (truncated 1000 rows)
+")
   quit()
 }
 
