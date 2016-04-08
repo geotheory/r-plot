@@ -54,6 +54,11 @@
 	# Just view aggregated data without plot
 	rplot mtcars.csv gear mpg -HamzQ
 
+	# Useful function to report header row - e.g. 'headx iris.csv ,' (specify delimiter)
+	    headx() { IFS=$2 read -r -a array <<< \"$(head -1 $1)\";
+	    for i in $(seq $(expr ${#array[@]} - 1)); do 
+	    echo $i - \"${array[$i]}\"; done;}
+
 -----------------------------------------------
 
 ### Output from above

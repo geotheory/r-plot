@@ -269,6 +269,8 @@ if("-O" %in% plot_args){
   inspect_df(d)
 }
 
+
+
 # parse numerics
 for(i in 1:ncol(d)){
   nums = num( d[,i] )                    # check if numeric/coercible
