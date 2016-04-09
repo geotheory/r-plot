@@ -84,6 +84,7 @@ OPTIONS:
          `. : ■ █` scatterplots with o/p). Requires 1 char eg. `-p \".\"` (eg. with -y)
          or a 4 char string eg. \".°*@\" to change overplot symbols (inc. quotes)
     -R   Add r2 correlation (bivariate only))
+    -w   Remove ID col max width constraints in hash plots, and scale to full console width
     -x   Suppress summary in case of scatterplot
     -y   Suppress scatterplot point symbols (that show overplotting)
     -z   Suppress plot (eg. use with -P or -Q)
@@ -263,7 +264,8 @@ inspect_df = function (obj) {
 }
 
 # read in data
-cons_width = min(100, as.integer(system('tput cols', intern=T)))
+cons_width = as.integer(system('tput cols', intern=T)) - 10
+cons_width = ifelse("-w" %in% plot_args, cons_width, min(100, cons_width))
 txt = field_args[1]
 rows = length(strsplit(txt, split='\n')[[1]])
 
@@ -276,8 +278,6 @@ if("-O" %in% plot_args){
   cat('\nRaw data as read-in:\n')
   inspect_df(d)
 }
-
-
 
 # parse numerics
 for(i in 1:ncol(d)){
@@ -344,6 +344,7 @@ if(!'-F' %in% plot_args & length(id_fields) == 1) {
     quit()
   }
 }
+
 # aggregate
 if('-a' %in% plot_args) {
   fun = 'sum'
@@ -406,7 +407,8 @@ for(f in c(id_fields, values_field)) {
   vals = d[[f]]
   numerics = !is.na(suppressWarnings(as.numeric(vals)))
   vals[numerics] = format_num(as.numeric(vals[numerics]))
-  maxlen = min(max(nchar(f), nchar(vals)), 30)
+  maxlen = max(nchar(f), nchar(vals))
+  maxlen = ifelse("-w" %in% plot_args, maxlen, min(maxlen, 30))
   vals = substr(vals, 1, maxlen)
   padstr = paste0("%-", maxlen, "s")
   field_data[n] = list(list(name = sprintf(padstr, substr(f, 1, maxlen)), values = sprintf(padstr, vals),
