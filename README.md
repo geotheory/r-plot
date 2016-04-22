@@ -54,8 +54,11 @@
 	# Just view aggregated data without plot
 	rplot mtcars.csv gear mpg -HamzQ
 
-	# Useful function to report header row - e.g. `headx iris.csv ";"` (specify delimiter if not comma)
+	# Useful functions to report header row - e.g. `headz iris.csv ";"` (specify delimiter if not comma)
+	
 	headx() { Rscript -e "l<-scan(text='$(head -1 $1)',what='character',sep=ifelse('$2'=='',',','$2'),quiet=T); for(i in 1:length(l)) cat(i,l[i],'\\\n')"; }
+
+	headz() { Rscript -e "a=commandArgs(T);l=read.table(text=a[1],se=ifelse('$2'=='',',','$2'),strin=F,h=T);for(i in 1:ncol(l)){f=l[,i];cat(i,' ',names(l)[i],' <',class(f),'> ',strtrim(paste(f,collapse=', '),min(80,as.integer(system('tput cols',int=T)))),'\\\n',sep='')}" "$(head -60 $1)"; }
 
 -----------------------------------------------
 
